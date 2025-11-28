@@ -44,6 +44,12 @@ func (g *Generator) getAlloc(ctx context.Context, tbName string) (*tbIdAlloc, er
 	return alloc, nil
 }
 
+var tbIdPool = sync.Pool{
+	New: func() any {
+		return &tbId{}
+	},
+}
+
 type tbId struct {
 	value uint64
 	onUse func()
@@ -65,9 +71,7 @@ type tbIdAlloc struct {
 
 func (a *tbIdAlloc) fetchId() uint64 {
 	id := <-a.idCh
-	if id.onUse != nil {
-		id.onUse()
-	}
+	id.onUse()
 	return id.value
 }
 
@@ -158,19 +162,24 @@ func (a *tbIdAlloc) fillAllocIds(startId, maxId uint64) {
 	var setAllocNextIdSegmentCallback bool
 	var ids []*tbId
 	for i := startId; i <= maxId; i++ {
-		var onUse func() = nil
-		// 当缓存中id队列不足50个或者不足约10%,提取分配下个步长区间的id
-		if !setAllocNextIdSegmentCallback && (maxId-i <= 50 || float64(i) > float64(maxId)*0.9) {
+		id := tbIdPool.Get().(*tbId)
+
+		var onUse = func() {
+			tbIdPool.Put(id)
+		}
+
+		// 当缓存中id队列不足50个或者不足约1%,提取分配下个步长区间的id
+		if !setAllocNextIdSegmentCallback && (maxId-i <= 50 || float64(i) > float64(maxId)*0.99) {
 			setAllocNextIdSegmentCallback = true
 			onUse = func() {
+				tbIdPool.Put(id)
 				a.stillTryAllocIdSegment()
 			}
 		}
 
-		ids = append(ids, &tbId{
-			value: i,
-			onUse: onUse,
-		})
+		id.value = i
+		id.onUse = onUse
+		ids = append(ids, id)
 	}
 
 	go func() {
