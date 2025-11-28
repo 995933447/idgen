@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package idgen;
+option go_package = "github.com/995933447/idgen/idgen";
+
+import "mgorm_ext.proto";
+import "easymicro_ext.proto";
+
+option (easymicro_ext.proto_gen_opts) = {
+  grpc_schema: "idgen"
+  discovery_name: "idgen"
+  disabled_load_nats: true
+  disabled_load_redis: true
+  disabled_elect: true
+};
+
+service IdGen {
+  rpc AllocId(AllocIdReq) returns (AllocIdResp);
+  rpc MAllocId(MAllocIdReq) returns (MAllocIdResp);
+}
+
+message AllocIdReq {
+  string tb_name = 1;
+}
+
+message AllocIdResp {
+  uint64 id = 1;
+}
+
+message MAllocIdReq {
+  string tb_name = 1;
+  int32 count = 2;
+}
+
+message MAllocIdResp {
+  repeated uint64 list = 1;
+}
+
+message IdSegment {
+  option (mgorm_ext.mgorm_opts) = {
+    conn: "idgen"
+    db: "idgen"
+    tb:"id_segment"
+    uniq_index_keys: "tb_name"
+  };
+  string tb_name = 5;
+  uint64 max_id = 6;
+  uint64 step = 7;
+  string remark = 8;
+}
