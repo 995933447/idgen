@@ -1,4 +1,4 @@
-## 基于leaf算法+内存缓存+mongodb持久化实现高性能分布式id生成器服务
+## 基于leaf segment算法+内存缓存+mongodb持久化实现高性能分布式id生成器服务
 
 使用例子:
 ````go
