@@ -1,4 +1,4 @@
-## 基于leaf segment算法+内存缓存+mongodb持久化实现高性能分布式id生成器服务
+## 基于easymicro+leaf segment算法+内存缓存+mongodb持久化实现高性能分布式id生成器服务
 ### 每段内存缓存id segment在临近消耗完会异步提取生成下一id段,保持接口快速响应
 
 使用例子:
